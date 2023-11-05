@@ -20,6 +20,7 @@ class DictaphoneActivity(private val activity: ComponentActivity) {
     private var outputFilePath: String? = null
     private var counterRecord: Int? = 0
 
+
     // проверка на разрешения доступа к микрофону и к записи в хранилище
     fun checkPermission(context: Context) {
         if (ContextCompat.checkSelfPermission(context,
@@ -37,7 +38,7 @@ class DictaphoneActivity(private val activity: ComponentActivity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             mediaRecorder = MediaRecorder(context).apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
                 setOutputFile(getOutputFilePath(context))
                 try{
@@ -48,18 +49,17 @@ class DictaphoneActivity(private val activity: ComponentActivity) {
                     // перехват
                 }
 
-            }
-        }
+            } }
     }
 
     private fun createOutputFile(): File {
-        val directory = Environment.getExternalStorageDirectory()
+        val directory = Environment.getExternalStorageDirectory().absolutePath
         val folder = File(directory, "MyRecorder")
         if (!folder.exists()) {
             folder.mkdirs()
         }
         counterRecord = counterRecord!! + 1
-        return File(folder, "recording_${counterRecord}.3gp")
+        return File(folder, "recording_${counterRecord}.mp3")
     }
 
     fun stopRecording() {

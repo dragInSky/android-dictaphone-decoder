@@ -4,7 +4,7 @@
     <!-- Разрешение на запись аудио -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <!-- Разрешение на использование микрофона -->
     <uses-feature android:name="android.hardware.microphone" android:required="true" />

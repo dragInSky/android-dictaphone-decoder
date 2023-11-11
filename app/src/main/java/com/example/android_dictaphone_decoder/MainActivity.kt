@@ -6,8 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -47,7 +49,6 @@ class MainActivity : ComponentActivity() {
     private val dictaphoneActivity = DictaphoneActivity(this)
     private var talk by mutableStateOf("Говори, а я все запишу")
 
-
     @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,6 +85,7 @@ class MainActivity : ComponentActivity() {
         var isPlaying by remember { mutableStateOf(false) }
 
         val context = LocalContext.current
+        val speechRecognizer = remember { SpeechRecognizer.createSpeechRecognizer(context) }
 
         // Проверка разрешений и запрос их у пользователя
         DisposableEffect(Unit) {
@@ -120,7 +122,7 @@ class MainActivity : ComponentActivity() {
             Button(
                 onClick = {
                     if (!isPlaying) {
-                        dictaphoneActivity.startPlaying(context)
+                        dictaphoneActivity.startPlaying()
                     } else {
                         dictaphoneActivity.stopPlaying()
                     }
@@ -142,6 +144,10 @@ class MainActivity : ComponentActivity() {
         var isRecording by remember { mutableStateOf(false) }
         var isPlaying by remember { mutableStateOf(false) }
 
+        val speechRecognize = remember { SpeechRecognizer.createSpeechRecognizer(context) }
+
+        Log.ERROR
+
         Column(
             modifier = Modifier
                 .fillMaxSize(),
@@ -162,9 +168,11 @@ class MainActivity : ComponentActivity() {
             Button(
                 onClick = {
                     if (!isRecording) {
+                        askSpeechInput(context = context, speechRecognize)
                         dictaphoneActivity.startRecording(context)
                     } else {
                         dictaphoneActivity.stopRecording()
+                        speechRecognize.stopListening()
                     }
                     isRecording = !isRecording
                 },
@@ -181,23 +189,9 @@ class MainActivity : ComponentActivity() {
             Spacer(modifier = Modifier.height(20.dp))
 
             Button(
-                onClick = { askSpeechInput(context = context) },
-                modifier = Modifier.clip(RoundedCornerShape(10.dp))
-            ) {
-                Text(
-                    text = "Talk",
-                    fontSize = 20.sp,
-                    modifier = Modifier
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
                 onClick = {
                     if (!isPlaying) {
-                        dictaphoneActivity.startPlaying(context)
+                        dictaphoneActivity.startPlaying()
                     } else {
                         dictaphoneActivity.stopPlaying()
                     }
@@ -212,22 +206,7 @@ class MainActivity : ComponentActivity() {
                         .padding(horizontal = 10.dp, vertical = 5.dp)
 
                 )
-
-
             }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == 102 && resultCode == Activity.RESULT_OK) {
-            val result = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            val spokenText = result?.get(0).toString()
-            saveTextToFile(spokenText, "speech_text1.txt")
-
-            talk = spokenText
         }
     }
 
@@ -245,23 +224,54 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun askSpeechInput(context: Context) {
+    private fun askSpeechInput(context: Context, speechRecognize: SpeechRecognizer) {
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
             Toast.makeText(context, "Speech not Available", Toast.LENGTH_SHORT).show()
         } else {
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH)
+            val speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            speechRecognizerIntent.putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH
+            )
+
             intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
             intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Скажи мне что нибудь")
 
-            startActivityForResult(intent, 102)
+            speechRecognize.setRecognitionListener(object : RecognitionListener {
+                override fun onReadyForSpeech(params: Bundle?) {}
+
+                override fun onBeginningOfSpeech() {}
+
+                override fun onRmsChanged(rmsdB: Float) {}
+
+                override fun onBufferReceived(buffer: ByteArray?) {}
+
+                override fun onEndOfSpeech() {}
+
+                override fun onError(error: Int) {
+                    Log.e("onErrorAAA2", error.toString())
+                }
+
+                // Обработка результатов распознавания речи
+                override fun onResults(results: Bundle) {
+                    Log.e("onResults", "YEAH")
+
+                    val result = results.getStringArrayList(RecognizerIntent.EXTRA_RESULTS)
+                    val spokenText = result?.get(0).toString()
+//                    saveTextToFile(spokenText, "speech_text1.txt")
+
+                    Toast.makeText(context, spokenText, Toast.LENGTH_SHORT).show()
+
+                    talk = spokenText
+                }
+
+                override fun onPartialResults(partialResults: Bundle?) {}
+
+                override fun onEvent(eventType: Int, params: Bundle?) {}
+            })
+
+            // Начало распознавания речи с использованием записанного аудио
+            speechRecognize.startListening(speechRecognizerIntent)
         }
     }
-
 }
-
-
-
-
-
-

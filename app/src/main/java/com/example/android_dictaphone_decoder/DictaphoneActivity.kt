@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.media.MediaRecorder
-import android.speech.SpeechRecognizer
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.core.app.ActivityCompat
@@ -73,7 +72,7 @@ class DictaphoneActivity(private val activity: ComponentActivity) {
     }
 
     // данные методы в новой версии пока, что не используются
-    fun startPlaying(context: Context) {
+    fun startPlaying() {
         mediaPlayer = MediaPlayer().apply {
             setDataSource(outputFilePath)
             prepare()

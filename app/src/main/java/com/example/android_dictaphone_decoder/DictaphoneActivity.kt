@@ -15,7 +15,8 @@ class DictaphoneActivity(private val activity: ComponentActivity) {
 
     private var mediaRecorder: MediaRecorder? = null
     private var mediaPlayer: MediaPlayer? = null
-    private var outputFilePath: String? = null
+
+    var outputFilePath: String? = null
 
     // проверка на разрешения доступа к микрофону и к записи в хранилище
     fun checkPermission(context: Context) {
@@ -30,7 +31,7 @@ class DictaphoneActivity(private val activity: ComponentActivity) {
             val permissions = arrayOf(
                 Manifest.permission.RECORD_AUDIO,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
+                Manifest.permission.READ_EXTERNAL_STORAGE
             )
             ActivityCompat.requestPermissions(activity, permissions, 0)
         }
@@ -40,6 +41,8 @@ class DictaphoneActivity(private val activity: ComponentActivity) {
     fun startRecording(context: Context) {
         try {
             mediaRecorder = MediaRecorder()
+            mediaRecorder?.setAudioEncodingBitRate(16000)
+            mediaRecorder?.setAudioSamplingRate(44100)
             outputFilePath = "${activity.getExternalFilesDir(null)}/audio_record.mp3"
 
             mediaRecorder?.setAudioSource(MediaRecorder.AudioSource.MIC)
@@ -63,7 +66,6 @@ class DictaphoneActivity(private val activity: ComponentActivity) {
             mediaRecorder?.release()
             mediaRecorder = null
 
-
             Toast.makeText(activity, "Recording stopped", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -86,5 +88,4 @@ class DictaphoneActivity(private val activity: ComponentActivity) {
             release()
         }
     }
-
 }

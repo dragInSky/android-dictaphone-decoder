@@ -3,10 +3,17 @@ package com.example.android_dictaphone_decoder.ui.theme
 import androidx.compose.ui.graphics.Color
 
 object AppColors {
-    var VeryLight = Color(0xFFedf4fe)
-    var Light = Color(0xFFc1e3ff)
-    var VeryDark = Color(0xFF153f65)
-    var Black = Color(0xFF03131f)
+    var gradientTop = Color(0x33006FFD)
+    var gradientMid = Color(0x333AC0A0)
+    var gradientBotton = Color(0x33FF616D)
+    var Lightest = Color(0xFFEAF2FF)
+    var Light = Color(0xFFB3DAFF)
+    var Medius = Color(0xFF6FB9FF)
+    var Dark = Color(0xFF2897FF)
+    var Darkest = Color(0xFF006FFD)
+    var Black = Color(0xFF1E1E1E)
+    var Ghost = Color(0x33000000)
+    var DarkGhost = Color(0x66000000)
 }
 
 val Purple80 = Color(0xFFD0BCFF)

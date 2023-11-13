@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +50,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
+
 /*
 *   Простой диктофон и перевод голоса в текст.
 *   Если возникла проблема с тем, что приложение вылетает
@@ -66,7 +68,15 @@ class MainActivity : ComponentActivity() {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(AppColors.VeryLight)
+                        .background(
+                            brush = Brush.linearGradient(
+                                colors = listOf(
+                                    AppColors.gradientBotton,
+                                    AppColors.gradientMid,
+                                    AppColors.gradientTop
+                                )
+                            )
+                        )
                 ) {
                     RecordButton()
                 }
@@ -89,8 +99,9 @@ class MainActivity : ComponentActivity() {
             itemsIndexed(audioDataList) { index, info ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.border(2.dp, AppColors.Black)
-                        .background(AppColors.Light)
+                    modifier = Modifier
+                        .border(2.dp, AppColors.Black)
+                        .background(AppColors.Ghost)
                 ) {
                     Column(
                         modifier = Modifier
@@ -112,7 +123,8 @@ class MainActivity : ComponentActivity() {
                             Text(formattedDateTime)
                         }
                         Row {
-                            val checkExpr = info.duration / 1000f < 30 && info.size / 1024f / 1024f < 1
+                            val checkExpr =
+                                info.duration / 1000f < 30 && info.size / 1024f / 1024f < 1
 
                             Button(
                                 onClick = {
@@ -141,7 +153,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 shape = RoundedCornerShape(20.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = AppColors.VeryDark,
+                                    containerColor = AppColors.Darkest,
                                     contentColor = Color.White
                                 )
                             ) {
@@ -178,7 +190,7 @@ class MainActivity : ComponentActivity() {
                             .size(75.dp, 75.dp),
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = AppColors.VeryDark
+                            containerColor = AppColors.Darkest
                         )
                     ) {
                         Icon(
@@ -232,10 +244,15 @@ class MainActivity : ComponentActivity() {
                         elapsedTime = 0
                     }
                 },
-                modifier = Modifier.size(75.dp, 75.dp),
                 shape = RoundedCornerShape(20.dp),
+                modifier = Modifier
+                    .size(75.dp, 75.dp)
+                    .border(
+                        2.dp, AppColors.Lightest,
+                        shape = RoundedCornerShape(20.dp)
+                    ),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = AppColors.VeryDark
+                    containerColor = AppColors.Darkest
                 )
             ) {
                 Icon(
@@ -244,17 +261,18 @@ class MainActivity : ComponentActivity() {
                     tint = Color.White
                 )
             }
+
             if (isRecording) {
                 Box(
                     modifier = Modifier
                         .size(150.dp)
-                        .background(AppColors.Black, CircleShape)
+                        .background(AppColors.DarkGhost, CircleShape)
                         .padding(16.dp)
                         .align(Alignment.Center)
                 ) {
                     Text(
                         text = "${elapsedTime / 10f}",
-                        color = AppColors.VeryLight,
+                        color = AppColors.Lightest,
                         style = MaterialTheme.typography.h2.copy(
                             fontWeight = FontWeight.Bold
                         ),

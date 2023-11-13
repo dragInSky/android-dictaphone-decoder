@@ -57,7 +57,6 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-
 /*
 *   Простой диктофон и перевод голоса в текст.
 *   Если возникла проблема с тем, что приложение вылетает
@@ -121,7 +120,11 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(16.dp)
                     ) {
-                        var value by remember { mutableStateOf(textFieldValues.value[index]?.text ?: "") }
+                        var value by remember {
+                            mutableStateOf(
+                                textFieldValues.value[index]?.text ?: ""
+                            )
+                        }
 
                         TextField(
                             value = value,
@@ -165,7 +168,7 @@ class MainActivity : ComponentActivity() {
 
                             Button(
                                 onClick = {
-                                    if (textStates[index].isNullOrEmpty()) {
+                                    if (textStates[index] == null) {
                                         if (checkExpr) {
                                             Toast.makeText(
                                                 context,

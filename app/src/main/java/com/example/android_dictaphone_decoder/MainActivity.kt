@@ -34,7 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import com.example.android_dictaphone_decoder.ui.theme.SpeechToTextTheme
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -93,6 +96,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     @SuppressLint("NewApi")
     @Composable
     fun DisplayAudioData() {
@@ -134,10 +138,10 @@ class MainActivity : ComponentActivity() {
                                 if (textStates[index].isNullOrEmpty()) {
                                     ioScope.launch {
                                         textStates[index] = speechKit.recognize(info.filePath)
-                                        textButtonStates[index] = textButtonStates[index]?.not() ?: true
+                                        textButtonStates[index] =
+                                            textButtonStates[index]?.not() ?: true
                                     }
-                                }
-                                else {
+                                } else {
                                     textButtonStates[index] = textButtonStates[index]?.not() ?: true
                                 }
                             },
@@ -158,10 +162,18 @@ class MainActivity : ComponentActivity() {
                                 dictaphoneActivity.stopPlaying()
                             } else {
                                 dictaphoneActivity.startPlaying(info.filePath)
+
+                                GlobalScope.launch {
+                                    delay(info.duration)
+
+                                    dictaphoneActivity.stopPlaying()
+                                    playButtonStates[index] = false
+                                }
                             }
                             playButtonStates[index] = playButtonStates[index]?.not() ?: true
                         },
-                        modifier = Modifier.size(75.dp, 75.dp),
+                        modifier = Modifier.padding(end = 16.dp)
+                            .size(75.dp, 75.dp),
                         shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(23, 29, 91)

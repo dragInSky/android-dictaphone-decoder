@@ -27,12 +27,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import com.example.android_dictaphone_decoder.ui.theme.SpeechToTextTheme
 import kotlinx.coroutines.CoroutineScope
@@ -42,6 +40,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileWriter
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 /*
@@ -53,7 +53,6 @@ import java.util.*
 class MainActivity : ComponentActivity() {
     private val dictaphoneActivity = DictaphoneActivity(this)
     private val speechKit = SpeechKit()
-    private var talk by mutableStateOf("Говори, а я все запишу")
     private var viewModel = AudioDataViewModel()
 
     @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
@@ -86,19 +85,24 @@ class MainActivity : ComponentActivity() {
         private val _audioDataList = MutableStateFlow(listOf<AudioData>())
         val audioDataList = _audioDataList.asStateFlow()
 
-        fun addAudioData(filePath: String, text: String) {
-            val newAudioFileInfo = AudioData.instance(filePath, text)
+        fun addAudioData(filePath: String, date: LocalDateTime) {
+            val newAudioFileInfo = AudioData.instance(filePath, date)
             val newList = _audioDataList.value.toMutableList()
             newList.add(newAudioFileInfo)
             _audioDataList.value = newList
         }
     }
 
+    @SuppressLint("NewApi")
     @Composable
     fun DisplayAudioData() {
         val audioDataList by viewModel.audioDataList.collectAsState()
 
-        val buttonStates = remember { mutableStateMapOf<Int, Boolean>() }
+        val ioScope = CoroutineScope(Dispatchers.IO)
+
+        val textStates = remember { mutableStateMapOf<Int, String>() }
+        val playButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
+        val textButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
 
         LazyColumn {
             itemsIndexed(audioDataList) { index, info ->
@@ -113,21 +117,49 @@ class MainActivity : ComponentActivity() {
                             .padding(16.dp)
                     ) {
                         Row {
-                            Text("${info.duration} ms")
+                            val currentDateTime = info.date
+
+                            // Форматирование даты и времени
+                            val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
+                            val formattedDateTime = currentDateTime.format(formatter)
+
+                            Text("${String.format("%.2f", info.duration / 1000f)}s")
                             Spacer(Modifier.width(8.dp))
-                            Text("${info.size} bytes")
+                            Text("${String.format("%.2f", info.size / 1024f)}kb")
+                            Spacer(Modifier.width(8.dp))
+                            Text(formattedDateTime)
                         }
-                        Text("Text: ${info.text}")
+                        Button(
+                            onClick = {
+                                if (textStates[index].isNullOrEmpty()) {
+                                    ioScope.launch {
+                                        textStates[index] = speechKit.recognize(info.filePath)
+                                        textButtonStates[index] = textButtonStates[index]?.not() ?: true
+                                    }
+                                }
+                                else {
+                                    textButtonStates[index] = textButtonStates[index]?.not() ?: true
+                                }
+                            },
+                            shape = RoundedCornerShape(20.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(23, 29, 91),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(if (textButtonStates[index] == true) "Скрыть" else "Распознать")
+                        }
+                        Text(if (textButtonStates[index] == true) "${textStates[index]}" else "")
                     }
 
                     Button(
                         onClick = {
-                            if (buttonStates[index] == true) {
+                            if (playButtonStates[index] == true) {
                                 dictaphoneActivity.stopPlaying()
                             } else {
                                 dictaphoneActivity.startPlaying(info.filePath)
                             }
-                            buttonStates[index] = buttonStates[index]?.not() ?: true
+                            playButtonStates[index] = playButtonStates[index]?.not() ?: true
                         },
                         modifier = Modifier.size(75.dp, 75.dp),
                         shape = RoundedCornerShape(20.dp),
@@ -136,7 +168,7 @@ class MainActivity : ComponentActivity() {
                         )
                     ) {
                         Icon(
-                            imageVector = if (buttonStates[index] == true) Icons.Default.Done else Icons.Default.PlayArrow,
+                            imageVector = if (playButtonStates[index] == true) Icons.Default.Done else Icons.Default.PlayArrow,
                             contentDescription = null,
                             tint = Color.White
                         )
@@ -151,8 +183,6 @@ class MainActivity : ComponentActivity() {
     fun SpeechToText() {
         val context = LocalContext.current
         var isRecording by remember { mutableStateOf(false) }
-
-        val ioScope = CoroutineScope(Dispatchers.IO)
 
         DisplayAudioData()
 
@@ -169,15 +199,10 @@ class MainActivity : ComponentActivity() {
                     } else {
                         dictaphoneActivity.stopRecording()
 
-                        ioScope.launch {
-                            dictaphoneActivity.outputFilePath?.let {
-                                talk = speechKit.recognize(it)
-                                viewModel.addAudioData(
-                                    dictaphoneActivity.outputFilePath.toString(),
-                                    talk
-                                )
-                            }
-                        }
+                        viewModel.addAudioData(
+                            dictaphoneActivity.outputFilePath.toString(),
+                            LocalDateTime.now()
+                        )
                     }
                     isRecording = !isRecording
                 },

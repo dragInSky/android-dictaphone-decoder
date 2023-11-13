@@ -1,13 +1,11 @@
 package com.example.android_dictaphone_decoder
 
 import android.annotation.SuppressLint
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -41,10 +39,9 @@ import java.util.*
 * */
 class MainActivity : ComponentActivity() {
     private val dictaphoneActivity = DictaphoneActivity(this)
-    private val recognizer = Recognizer()
+    private val speechKit = SpeechKit()
     private var talk by mutableStateOf("Говори, а я все запишу")
 
-    @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,7 +68,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SuppressLint("NewApi")
     @Composable
     fun SpeechToText() {
         val context = LocalContext.current
@@ -108,7 +105,7 @@ class MainActivity : ComponentActivity() {
 
                         ioScope.launch {
                             dictaphoneActivity.outputFilePath?.let {
-                                talk = recognizer.recognize(it)
+                                talk = "Вы сказали: " + speechKit.recognize(it)
                             }
                         }
                     }

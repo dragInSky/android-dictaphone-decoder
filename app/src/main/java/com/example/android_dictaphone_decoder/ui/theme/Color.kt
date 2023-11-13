@@ -2,6 +2,13 @@ package com.example.android_dictaphone_decoder.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+object AppColors {
+    var VeryLight = Color(0xFFedf4fe)
+    var Light = Color(0xFFc1e3ff)
+    var VeryDark = Color(0xFF153f65)
+    var Black = Color(0xFF03131f)
+}
+
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)

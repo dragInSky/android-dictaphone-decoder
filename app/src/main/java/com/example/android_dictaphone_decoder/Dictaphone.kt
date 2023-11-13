@@ -13,13 +13,13 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import java.io.IOException
 
-class DictaphoneActivity(private val activity: ComponentActivity) {
+class Dictaphone(private val activity: ComponentActivity) {
     private var mediaRecorder: MediaRecorder? = null
     private var mediaPlayer: MediaPlayer? = null
 
-    var outputFilePath: String? = null
-
     private var counter = 1
+
+    var outputFilePath: String = ""
 
     // проверка на разрешения доступа к микрофону и к записи в хранилище
     fun checkPermission(context: Context) {

@@ -13,7 +13,6 @@ class SpeechKit {
         "https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?folderId=${folderId}&lang=ru-RU"
 
     fun recognize(filePath: String): String {
-        //Отсюда запрос к Yandex SpeechKit, этот код отдельно работает с .ogg файлом
         val client = OkHttpClient()
 
         val mediaType = "application/octet-stream".toMediaType()

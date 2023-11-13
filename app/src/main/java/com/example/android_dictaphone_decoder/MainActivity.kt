@@ -1,14 +1,17 @@
 package com.example.android_dictaphone_decoder
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -29,17 +32,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
+import com.example.android_dictaphone_decoder.ui.theme.AppColors
 import com.example.android_dictaphone_decoder.ui.theme.SpeechToTextTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileWriter
@@ -49,70 +47,47 @@ import java.util.*
 
 /*
 *   Простой диктофон и перевод голоса в текст.
-*   2 отдельные кнопки на 2 действия.
 *   Если возникла проблема с тем, что приложение вылетает
 *   проверь разрешение для микрофона у приложения
 * */
 class MainActivity : ComponentActivity() {
-    private val dictaphoneActivity = DictaphoneActivity(this)
+    private val dictaphone = Dictaphone(this)
     private val speechKit = SpeechKit()
     private var viewModel = AudioDataViewModel()
 
-    @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             SpeechToTextTheme {
-                Surface(color = MaterialTheme.colors.background) {
-                    Scaffold(
-                        topBar = {
-                            TopAppBar(
-                                title = {
-                                    Text(
-                                        text = "Речь в текст",
-                                        modifier = Modifier.fillMaxWidth(),
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            )
-                        }
-                    ) {
-                        SpeechToText()
-                    }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(AppColors.VeryLight)
+                ) {
+                    RecordButton()
                 }
             }
-        }
-    }
-
-    class AudioDataViewModel : ViewModel() {
-        private val _audioDataList = MutableStateFlow(listOf<AudioData>())
-        val audioDataList = _audioDataList.asStateFlow()
-
-        fun addAudioData(filePath: String, date: LocalDateTime) {
-            val newAudioFileInfo = AudioData.instance(filePath, date)
-            val newList = _audioDataList.value.toMutableList()
-            newList.add(newAudioFileInfo)
-            _audioDataList.value = newList
         }
     }
 
     @OptIn(DelicateCoroutinesApi::class)
     @SuppressLint("NewApi")
     @Composable
-    fun DisplayAudioData() {
+    fun DisplayAudioData(context: Context) {
         val audioDataList by viewModel.audioDataList.collectAsState()
-
-        val ioScope = CoroutineScope(Dispatchers.IO)
 
         val textStates = remember { mutableStateMapOf<Int, String>() }
         val playButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
         val textButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
 
+        val ioScope = CoroutineScope(Dispatchers.IO)
+
         LazyColumn {
             itemsIndexed(audioDataList) { index, info ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.border(2.dp, Color.Black)
+                    modifier = Modifier.border(2.dp, AppColors.Black)
+                        .background(AppColors.Light)
                 ) {
                     Column(
                         modifier = Modifier
@@ -121,62 +96,77 @@ class MainActivity : ComponentActivity() {
                             .padding(16.dp)
                     ) {
                         Row {
-                            val currentDateTime = info.date
-
-                            // Форматирование даты и времени
-                            val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
-                            val formattedDateTime = currentDateTime.format(formatter)
-
                             Text("${String.format("%.2f", info.duration / 1000f)}s")
+
                             Spacer(Modifier.width(8.dp))
+
                             Text("${String.format("%.2f", info.size / 1024f)}kb")
+
                             Spacer(Modifier.width(8.dp))
+
+                            val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
+                            val formattedDateTime = info.date.format(formatter)
                             Text(formattedDateTime)
                         }
-                        Button(
-                            onClick = {
-                                if (textStates[index].isNullOrEmpty()) {
-                                    ioScope.launch {
-                                        textStates[index] = speechKit.recognize(info.filePath)
+                        Row {
+                            Button(
+                                onClick = {
+                                    if (textStates[index].isNullOrEmpty()) {
+                                        Toast.makeText(
+                                            context,
+                                            "Wait speech-to-text",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        ioScope.launch {
+                                            textStates[index] = speechKit.recognize(info.filePath)
+                                            textButtonStates[index] =
+                                                textButtonStates[index]?.not() ?: true
+                                        }
+                                    } else {
                                         textButtonStates[index] =
                                             textButtonStates[index]?.not() ?: true
                                     }
-                                } else {
-                                    textButtonStates[index] = textButtonStates[index]?.not() ?: true
-                                }
-                            },
-                            shape = RoundedCornerShape(20.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(23, 29, 91),
-                                contentColor = Color.White
+                                },
+                                shape = RoundedCornerShape(20.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = AppColors.VeryDark,
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text(if (textButtonStates[index] == true) "Скрыть" else "Распознать")
+                            }
+
+                            Spacer(Modifier.width(8.dp))
+
+                            Text(
+                                if (textButtonStates[index] == true) "${textStates[index]}" else "",
+                                modifier = Modifier.align(Alignment.CenterVertically)
                             )
-                        ) {
-                            Text(if (textButtonStates[index] == true) "Скрыть" else "Распознать")
                         }
-                        Text(if (textButtonStates[index] == true) "${textStates[index]}" else "")
                     }
 
                     Button(
                         onClick = {
                             if (playButtonStates[index] == true) {
-                                dictaphoneActivity.stopPlaying()
+                                dictaphone.stopPlaying()
                             } else {
-                                dictaphoneActivity.startPlaying(info.filePath)
+                                dictaphone.startPlaying(info.filePath)
 
-                                GlobalScope.launch {
-                                    delay(info.duration)
-
-                                    dictaphoneActivity.stopPlaying()
-                                    playButtonStates[index] = false
-                                }
+//                                GlobalScope.launch {
+//                                    delay(info.duration)
+//
+//                                    dictaphone.stopPlaying()
+//                                    playButtonStates[index] = false
+//                                }
                             }
                             playButtonStates[index] = playButtonStates[index]?.not() ?: true
                         },
-                        modifier = Modifier.padding(end = 16.dp)
+                        modifier = Modifier
+                            .padding(end = 16.dp)
                             .size(75.dp, 75.dp),
-                        shape = RoundedCornerShape(20.dp),
+                        shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(23, 29, 91)
+                            containerColor = AppColors.VeryDark
                         )
                     ) {
                         Icon(
@@ -192,11 +182,11 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("NewApi")
     @Composable
-    fun SpeechToText() {
+    fun RecordButton() {
         val context = LocalContext.current
         var isRecording by remember { mutableStateOf(false) }
 
-        DisplayAudioData()
+        DisplayAudioData(context)
 
         Box(
             modifier = Modifier
@@ -207,12 +197,12 @@ class MainActivity : ComponentActivity() {
             Button(
                 onClick = {
                     if (!isRecording) {
-                        dictaphoneActivity.startRecording(context)
+                        dictaphone.startRecording(context)
                     } else {
-                        dictaphoneActivity.stopRecording()
+                        dictaphone.stopRecording()
 
                         viewModel.addAudioData(
-                            dictaphoneActivity.outputFilePath.toString(),
+                            dictaphone.outputFilePath,
                             LocalDateTime.now()
                         )
                     }
@@ -221,7 +211,7 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.size(75.dp, 75.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(23, 29, 91)
+                    containerColor = AppColors.VeryDark
                 )
             ) {
                 Icon(

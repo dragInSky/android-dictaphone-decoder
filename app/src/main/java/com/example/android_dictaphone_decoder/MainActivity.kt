@@ -2,16 +2,18 @@ package com.example.android_dictaphone_decoder
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,9 +25,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
 import com.example.android_dictaphone_decoder.ui.theme.SpeechToTextTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileWriter
@@ -41,6 +46,7 @@ class MainActivity : ComponentActivity() {
     private val dictaphoneActivity = DictaphoneActivity(this)
     private val speechKit = SpeechKit()
     private var talk by mutableStateOf("Говори, а я все запишу")
+    private var viewModel = AudioDataViewModel()
 
     @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,16 +74,61 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    class AudioDataViewModel : ViewModel() {
+        private val _audioDataList = MutableStateFlow(listOf<AudioData>())
+        val audioDataList = _audioDataList.asStateFlow()
+
+        fun addAudioData(filePath: String) {
+            val newAudioFileInfo = AudioData.instance(filePath)
+            val newList = _audioDataList.value.toMutableList()
+            newList.add(newAudioFileInfo)
+            _audioDataList.value = newList
+        }
+    }
+
+    @Composable
+    fun DisplayAudioData() {
+        val audioDataList by viewModel.audioDataList.collectAsState()
+
+        var isPlaying by remember { mutableStateOf(false) }
+
+        LazyColumn {
+            items(audioDataList) { info ->
+                Text("Duration: ${info.duration} ms")
+                Text("Format: ${info.format}")
+                Text("Size: ${info.size} bytes")
+
+                Button(
+                    onClick = {
+                        if (!isPlaying) {
+                            dictaphoneActivity.startPlaying(info.filePath)
+                        } else {
+                            dictaphoneActivity.stopPlaying()
+                        }
+                        isPlaying = !isPlaying
+                    },
+                    modifier = Modifier.clip(RoundedCornerShape(10.dp))
+                ) {
+                    Text(
+                        text = if (isPlaying) "Stop Playing" else "Start Playing",
+                        fontSize = 20.sp,
+                        modifier = Modifier
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                    )
+                }
+            }
+        }
+    }
+
     @SuppressLint("NewApi")
     @Composable
     fun SpeechToText() {
         val context = LocalContext.current
         var isRecording by remember { mutableStateOf(false) }
-        var isPlaying by remember { mutableStateOf(false) }
 
         val ioScope = CoroutineScope(Dispatchers.IO)
 
-        Log.ERROR
+        DisplayAudioData()
 
         Column(
             modifier = Modifier
@@ -108,6 +159,8 @@ class MainActivity : ComponentActivity() {
                                 talk = "Вы сказали: " + speechKit.recognize(it)
                             }
                         }
+
+                        viewModel.addAudioData(dictaphoneActivity.outputFilePath.toString())
                     }
                     isRecording = !isRecording
                 },
@@ -118,28 +171,6 @@ class MainActivity : ComponentActivity() {
                     fontSize = 20.sp,
                     modifier = Modifier
                         .padding(horizontal = 10.dp, vertical = 5.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Button(
-                onClick = {
-                    if (!isPlaying) {
-                        dictaphoneActivity.startPlaying()
-                    } else {
-                        dictaphoneActivity.stopPlaying()
-                    }
-                    isPlaying = !isPlaying
-                },
-                modifier = Modifier.clip(RoundedCornerShape(10.dp))
-            ) {
-                Text(
-                    text = if (isPlaying) "Stop Playing" else "Start Playing",
-                    fontSize = 20.sp,
-                    modifier = Modifier
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-
                 )
             }
         }

@@ -14,11 +14,12 @@ import androidx.core.content.ContextCompat
 import java.io.IOException
 
 class DictaphoneActivity(private val activity: ComponentActivity) {
-
     private var mediaRecorder: MediaRecorder? = null
     private var mediaPlayer: MediaPlayer? = null
 
     var outputFilePath: String? = null
+
+    private var counter = 1
 
     // проверка на разрешения доступа к микрофону и к записи в хранилище
     fun checkPermission(context: Context) {
@@ -46,7 +47,7 @@ class DictaphoneActivity(private val activity: ComponentActivity) {
             mediaRecorder = MediaRecorder()
             mediaRecorder?.setAudioEncodingBitRate(16000)
             mediaRecorder?.setAudioSamplingRate(44100)
-            outputFilePath = "${activity.getExternalFilesDir(null)}/audio_record.ogg"
+            outputFilePath = "${activity.getExternalFilesDir(null)}/audio_record${counter++}.ogg"
 
             mediaRecorder?.setAudioSource(MediaRecorder.AudioSource.MIC)
             mediaRecorder?.setOutputFormat(MediaRecorder.OutputFormat.OGG)
@@ -77,9 +78,9 @@ class DictaphoneActivity(private val activity: ComponentActivity) {
     }
 
     // данные методы в новой версии пока, что не используются
-    fun startPlaying() {
+    fun startPlaying(filePath: String) {
         mediaPlayer = MediaPlayer().apply {
-            setDataSource(outputFilePath)
+            setDataSource(filePath)
             prepare()
             start()
         }

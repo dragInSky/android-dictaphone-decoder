@@ -10,7 +10,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -22,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -79,8 +85,8 @@ class MainActivity : ComponentActivity() {
         private val _audioDataList = MutableStateFlow(listOf<AudioData>())
         val audioDataList = _audioDataList.asStateFlow()
 
-        fun addAudioData(filePath: String) {
-            val newAudioFileInfo = AudioData.instance(filePath)
+        fun addAudioData(filePath: String, text: String) {
+            val newAudioFileInfo = AudioData.instance(filePath, text)
             val newList = _audioDataList.value.toMutableList()
             newList.add(newAudioFileInfo)
             _audioDataList.value = newList
@@ -95,27 +101,34 @@ class MainActivity : ComponentActivity() {
 
         LazyColumn {
             itemsIndexed(audioDataList) { index, info ->
-                Text("Duration: ${info.duration} ms")
-                Text("Format: ${info.format}")
-                Text("Size: ${info.size} bytes")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Duration: ${info.duration} ms")
+                        Text("Size: ${info.size} bytes")
+                        Text("Text: ${info.text}")
+                    }
 
-                Button(
-                    onClick = {
-                        if (buttonStates[index] == true) {
-                            dictaphoneActivity.stopPlaying()
-                        } else {
-                            dictaphoneActivity.startPlaying(info.filePath)
-                        }
-                        buttonStates[index] = buttonStates[index]?.not() ?: true
-                    },
-                    modifier = Modifier.clip(RoundedCornerShape(10.dp))
-                ) {
-                    Text(
-                        text = if (buttonStates[index] == true) "Stop Playing" else "Start Playing",
-                        fontSize = 20.sp,
-                        modifier = Modifier
-                            .padding(horizontal = 10.dp, vertical = 5.dp)
-                    )
+                    Button(
+                        onClick = {
+                            if (buttonStates[index] == true) {
+                                dictaphoneActivity.stopPlaying()
+                            } else {
+                                dictaphoneActivity.startPlaying(info.filePath)
+                            }
+                            buttonStates[index] = buttonStates[index]?.not() ?: true
+                        },
+                        modifier = Modifier.size(75.dp, 75.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(23, 29, 91)
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (buttonStates[index] == true) Icons.Default.Done else Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         }
@@ -131,23 +144,12 @@ class MainActivity : ComponentActivity() {
 
         DisplayAudioData()
 
-        Column(
+        Box(
             modifier = Modifier
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxSize()
+                .padding(16.dp),
+            contentAlignment = Alignment.BottomEnd
         ) {
-            Text(
-                text = talk,
-                style = MaterialTheme.typography.h6,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
             Button(
                 onClick = {
                     if (!isRecording) {
@@ -157,21 +159,23 @@ class MainActivity : ComponentActivity() {
 
                         ioScope.launch {
                             dictaphoneActivity.outputFilePath?.let {
-                                talk = "Вы сказали: " + speechKit.recognize(it)
+                                talk = speechKit.recognize(it)
+                                viewModel.addAudioData(dictaphoneActivity.outputFilePath.toString(), talk)
                             }
                         }
-
-                        viewModel.addAudioData(dictaphoneActivity.outputFilePath.toString())
                     }
                     isRecording = !isRecording
                 },
-                modifier = Modifier.clip(RoundedCornerShape(10.dp))
+                modifier = Modifier.size(75.dp, 75.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(23, 29, 91)
+                )
             ) {
-                Text(
-                    text = if (isRecording) "Stop Recording" else "Start Recording",
-                    fontSize = 20.sp,
-                    modifier = Modifier
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                Icon(
+                    imageVector = if (!isRecording) Icons.Default.Add else Icons.Default.Done,
+                    contentDescription = null,
+                    tint = Color.White
                 )
             }
         }

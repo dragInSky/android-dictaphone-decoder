@@ -15,15 +15,14 @@ import java.io.IOException
 import java.nio.ByteBuffer
 
 class Recognizer {
-    private val apiKey = "__"
-    private val folderId = "__"
+    private val apiKey = "AQVNz2OJ19b7zlbkLyH1dF661jvpJ4X_YXaUkEzh"
+    private val folderId = "b1gj2agjgfbobbspr6uu"
     private val apiUrl =
         "https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?folderId=${folderId}&lang=ru-RU"
 
     fun recognize(filePath: String,): String {
-        val newFilePath = filePath.replace("mp3", "ogg")
-        //Вот эта хрень не работает ?
-        convertMp3ToOgg(filePath, newFilePath)
+        val newFilePath = filePath
+
 
         //Отсюда запрос к Yandex SpeechKit, этот код отдельно работает с .ogg файлом
         val client = OkHttpClient()

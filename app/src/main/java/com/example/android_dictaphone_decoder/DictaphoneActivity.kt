@@ -5,8 +5,10 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import java.io.IOException
@@ -38,16 +40,17 @@ class DictaphoneActivity(private val activity: ComponentActivity) {
     }
 
     // старт записи голоса
+    @RequiresApi(Build.VERSION_CODES.Q)
     fun startRecording(context: Context) {
         try {
             mediaRecorder = MediaRecorder()
             mediaRecorder?.setAudioEncodingBitRate(16000)
             mediaRecorder?.setAudioSamplingRate(44100)
-            outputFilePath = "${activity.getExternalFilesDir(null)}/audio_record.mp3"
+            outputFilePath = "${activity.getExternalFilesDir(null)}/audio_record.ogg"
 
             mediaRecorder?.setAudioSource(MediaRecorder.AudioSource.MIC)
-            mediaRecorder?.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            mediaRecorder?.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+            mediaRecorder?.setOutputFormat(MediaRecorder.OutputFormat.OGG)
+            mediaRecorder?.setAudioEncoder(MediaRecorder.AudioEncoder.OPUS)
             mediaRecorder?.setOutputFile(outputFilePath)
 
             mediaRecorder?.prepare()

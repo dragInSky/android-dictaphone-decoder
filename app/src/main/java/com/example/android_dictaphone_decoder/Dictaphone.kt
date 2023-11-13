@@ -11,6 +11,8 @@ import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import java.io.IOException
 
 class Dictaphone(private val activity: ComponentActivity) {
@@ -65,6 +67,11 @@ class Dictaphone(private val activity: ComponentActivity) {
     }
 
     fun stopRecording() {
+        //задержка чтобы запись резко не обрывалась
+        runBlocking {
+            delay(100)
+        }
+
         try {
             mediaRecorder?.stop()
             mediaRecorder?.release()

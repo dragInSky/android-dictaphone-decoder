@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,12 +33,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.android_dictaphone_decoder.ui.theme.AppColors
 import com.example.android_dictaphone_decoder.ui.theme.SpeechToTextTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileWriter
@@ -70,7 +74,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     @SuppressLint("NewApi")
     @Composable
     fun DisplayAudioData(context: Context) {
@@ -109,16 +112,25 @@ class MainActivity : ComponentActivity() {
                             Text(formattedDateTime)
                         }
                         Row {
+                            val checkExpr = info.duration / 1000f < 30 && info.size / 1024f / 1024f < 1
+
                             Button(
                                 onClick = {
                                     if (textStates[index].isNullOrEmpty()) {
-                                        Toast.makeText(
-                                            context,
-                                            "Wait speech-to-text",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        ioScope.launch {
-                                            textStates[index] = speechKit.recognize(info.filePath)
+                                        if (checkExpr) {
+                                            Toast.makeText(
+                                                context,
+                                                "Wait speech-to-text",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            ioScope.launch {
+                                                textStates[index] =
+                                                    speechKit.recognize(info.filePath)
+                                                textButtonStates[index] =
+                                                    textButtonStates[index]?.not() ?: true
+                                            }
+                                        } else {
+                                            textStates[index] = "Too long to recognize"
                                             textButtonStates[index] =
                                                 textButtonStates[index]?.not() ?: true
                                         }
@@ -133,7 +145,7 @@ class MainActivity : ComponentActivity() {
                                     contentColor = Color.White
                                 )
                             ) {
-                                Text(if (textButtonStates[index] == true) "Скрыть" else "Распознать")
+                                Text(if (textButtonStates[index] == true) "Hide" else "Text")
                             }
 
                             Spacer(Modifier.width(8.dp))
@@ -180,11 +192,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     @SuppressLint("NewApi")
     @Composable
     fun RecordButton() {
         val context = LocalContext.current
         var isRecording by remember { mutableStateOf(false) }
+
+        var elapsedTime by remember { mutableLongStateOf(0L) }
 
         DisplayAudioData(context)
 
@@ -197,16 +212,25 @@ class MainActivity : ComponentActivity() {
             Button(
                 onClick = {
                     if (!isRecording) {
+                        isRecording = true
+                        GlobalScope.launch {
+                            while (isRecording) {
+                                delay(100)
+                                elapsedTime += 1
+                            }
+                        }
                         dictaphone.startRecording(context)
                     } else {
+                        isRecording = false
                         dictaphone.stopRecording()
 
                         viewModel.addAudioData(
                             dictaphone.outputFilePath,
                             LocalDateTime.now()
                         )
+
+                        elapsedTime = 0
                     }
-                    isRecording = !isRecording
                 },
                 modifier = Modifier.size(75.dp, 75.dp),
                 shape = RoundedCornerShape(20.dp),
@@ -219,6 +243,24 @@ class MainActivity : ComponentActivity() {
                     contentDescription = null,
                     tint = Color.White
                 )
+            }
+            if (isRecording) {
+                Box(
+                    modifier = Modifier
+                        .size(150.dp)
+                        .background(AppColors.Black, CircleShape)
+                        .padding(16.dp)
+                        .align(Alignment.Center)
+                ) {
+                    Text(
+                        text = "${elapsedTime / 10f}",
+                        color = AppColors.VeryLight,
+                        style = MaterialTheme.typography.h2.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
             }
         }
     }

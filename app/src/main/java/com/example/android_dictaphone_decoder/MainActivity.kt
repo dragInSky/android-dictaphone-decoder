@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -101,10 +102,21 @@ class MainActivity : ComponentActivity() {
 
         LazyColumn {
             itemsIndexed(audioDataList) { index, info ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Duration: ${info.duration} ms")
-                        Text("Size: ${info.size} bytes")
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.border(2.dp, Color.Black)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
+                        Row {
+                            Text("${info.duration} ms")
+                            Spacer(Modifier.width(8.dp))
+                            Text("${info.size} bytes")
+                        }
                         Text("Text: ${info.text}")
                     }
 
@@ -160,7 +172,10 @@ class MainActivity : ComponentActivity() {
                         ioScope.launch {
                             dictaphoneActivity.outputFilePath?.let {
                                 talk = speechKit.recognize(it)
-                                viewModel.addAudioData(dictaphoneActivity.outputFilePath.toString(), talk)
+                                viewModel.addAudioData(
+                                    dictaphoneActivity.outputFilePath.toString(),
+                                    talk
+                                )
                             }
                         }
                     }

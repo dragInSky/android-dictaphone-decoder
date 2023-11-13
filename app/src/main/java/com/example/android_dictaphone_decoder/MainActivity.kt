@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -30,11 +32,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.example.android_dictaphone_decoder.ui.theme.AppColors
 import com.example.android_dictaphone_decoder.ui.theme.SpeechToTextTheme
@@ -84,7 +91,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @SuppressLint("NewApi")
+    @OptIn(ExperimentalComposeUiApi::class)
+    @SuppressLint("NewApi", "MutableCollectionMutableState")
     @Composable
     fun DisplayAudioData(context: Context) {
         val audioDataList by viewModel.audioDataList.collectAsState()
@@ -92,6 +100,10 @@ class MainActivity : ComponentActivity() {
         val textStates = remember { mutableStateMapOf<Int, String>() }
         val playButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
         val textButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
+
+        var textFieldValues = remember { mutableStateOf(mutableMapOf<Int, TextFieldValue>()) }
+        val focusManager = LocalFocusManager.current
+        val keyboardController = LocalSoftwareKeyboardController.current
 
         val ioScope = CoroutineScope(Dispatchers.IO)
 
@@ -109,6 +121,33 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(16.dp)
                     ) {
+                        var value by remember { mutableStateOf(textFieldValues.value[index]?.text ?: "") }
+
+                        TextField(
+                            value = value,
+                            onValueChange = { newValue ->
+                                value = newValue
+                                textFieldValues.value[index] = TextFieldValue(newValue)
+                            },
+                            placeholder = {
+                                Text(
+                                    "Record ${
+                                        if (info.filePath.length >= 5) info.filePath[info.filePath.length - 5] else 0
+                                    }"
+                                )
+                            },
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    focusManager.clearFocus()
+                                    keyboardController?.hide()
+                                }
+                            ),
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                        )
                         Row {
                             Text("${String.format("%.2f", info.duration / 1000f)}s")
 

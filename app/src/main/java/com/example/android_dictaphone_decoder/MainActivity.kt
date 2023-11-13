@@ -7,7 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material3.Button
@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -90,27 +91,27 @@ class MainActivity : ComponentActivity() {
     fun DisplayAudioData() {
         val audioDataList by viewModel.audioDataList.collectAsState()
 
-        var isPlaying by remember { mutableStateOf(false) }
+        val buttonStates = remember { mutableStateMapOf<Int, Boolean>() }
 
         LazyColumn {
-            items(audioDataList) { info ->
+            itemsIndexed(audioDataList) { index, info ->
                 Text("Duration: ${info.duration} ms")
                 Text("Format: ${info.format}")
                 Text("Size: ${info.size} bytes")
 
                 Button(
                     onClick = {
-                        if (!isPlaying) {
-                            dictaphoneActivity.startPlaying(info.filePath)
-                        } else {
+                        if (buttonStates[index] == true) {
                             dictaphoneActivity.stopPlaying()
+                        } else {
+                            dictaphoneActivity.startPlaying(info.filePath)
                         }
-                        isPlaying = !isPlaying
+                        buttonStates[index] = buttonStates[index]?.not() ?: true
                     },
                     modifier = Modifier.clip(RoundedCornerShape(10.dp))
                 ) {
                     Text(
-                        text = if (isPlaying) "Stop Playing" else "Start Playing",
+                        text = if (buttonStates[index] == true) "Stop Playing" else "Start Playing",
                         fontSize = 20.sp,
                         modifier = Modifier
                             .padding(horizontal = 10.dp, vertical = 5.dp)

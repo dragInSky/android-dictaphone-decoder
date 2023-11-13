@@ -77,7 +77,6 @@ class DictaphoneActivity(private val activity: ComponentActivity) {
         }
     }
 
-    // данные методы в новой версии пока, что не используются
     fun startPlaying(filePath: String) {
         mediaPlayer = MediaPlayer().apply {
             setDataSource(filePath)

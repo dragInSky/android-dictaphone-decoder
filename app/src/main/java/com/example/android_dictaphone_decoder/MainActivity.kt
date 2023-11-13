@@ -101,7 +101,7 @@ class MainActivity : ComponentActivity() {
         val playButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
         val textButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
 
-        var textFieldValues = remember { mutableStateOf(mutableMapOf<Int, TextFieldValue>()) }
+        val textFieldValues = remember { mutableStateOf(mutableMapOf<Int, TextFieldValue>()) }
         val focusManager = LocalFocusManager.current
         val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -144,9 +144,7 @@ class MainActivity : ComponentActivity() {
                                     focusManager.clearFocus()
                                     keyboardController?.hide()
                                 }
-                            ),
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
+                            )
                         )
                         Row {
                             Text("${String.format("%.2f", info.duration / 1000f)}s")

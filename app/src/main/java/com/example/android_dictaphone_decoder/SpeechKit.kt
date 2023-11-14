@@ -7,7 +7,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 
 class SpeechKit {
-    private val apiKey = "AQVNz2OJ19b7zlbkLyH1dF661jvpJ4X_YXaUkEzh"
+    private val apiKey = ""
     private val folderId = "b1gj2agjgfbobbspr6uu"
     private val apiUrl =
         "https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?folderId=${folderId}&lang=ru-RU"

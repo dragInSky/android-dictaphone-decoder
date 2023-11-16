@@ -1,4 +1,4 @@
-package com.example.android_dictaphone_decoder
+package android_dictaphone_decoder
 
 import org.junit.Test
 

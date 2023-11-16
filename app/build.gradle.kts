@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.android_dictaphone_decoder"
+    namespace = "com.android.android_dictaphone_decoder"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.android_dictaphone_decoder"
+        applicationId = "com.android.android_dictaphone_decoder"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

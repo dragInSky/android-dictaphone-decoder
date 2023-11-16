@@ -1,9 +1,8 @@
-package com.example.android_dictaphone_decoder.ui.theme
+package android_dictaphone_decoder.theme
 
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.material3.MaterialTheme as MaterialTheme3
@@ -17,7 +16,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import com.example.android_dictaphone_decoder.ui.theme.SpeechToTextTheme
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,

@@ -1,4 +1,4 @@
-package com.example.android_dictaphone_decoder
+package android_dictaphone_decoder
 
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient

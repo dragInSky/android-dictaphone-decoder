@@ -1,4 +1,4 @@
-package com.example.android_dictaphone_decoder
+package android_dictaphone_decoder
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -43,8 +43,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import com.example.android_dictaphone_decoder.ui.theme.AppColors
-import com.example.android_dictaphone_decoder.ui.theme.SpeechToTextTheme
+import android_dictaphone_decoder.SpeechKit
+import android_dictaphone_decoder.theme.AppColors
+import android_dictaphone_decoder.theme.SpeechToTextTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers

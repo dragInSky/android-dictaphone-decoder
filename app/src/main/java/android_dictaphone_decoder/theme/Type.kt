@@ -1,4 +1,4 @@
-package com.example.android_dictaphone_decoder.ui.theme
+package android_dictaphone_decoder.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

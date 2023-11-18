@@ -13,6 +13,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import java.io.File
 import java.io.IOException
 
 class Dictaphone(private val activity: ComponentActivity) {
@@ -20,6 +21,8 @@ class Dictaphone(private val activity: ComponentActivity) {
     private var mediaPlayer: MediaPlayer? = null
 
     private var counter = 1
+
+
 
     var outputFilePath: String = ""
 
@@ -44,12 +47,17 @@ class Dictaphone(private val activity: ComponentActivity) {
 
     // старт записи голоса
     @RequiresApi(Build.VERSION_CODES.Q)
-    fun startRecording(context: Context) {
+    fun startRecording(context: Context, selectedDay: String) {
         try {
             mediaRecorder = MediaRecorder()
             mediaRecorder?.setAudioEncodingBitRate(16000)
             mediaRecorder?.setAudioSamplingRate(44100)
-            outputFilePath = "${activity.getExternalFilesDir(null)}/audio_record${counter++}.ogg"
+            val directory = File(activity.getExternalFilesDir(null), selectedDay)
+            if (!directory.exists()) {
+                directory.mkdirs()
+            }
+
+            outputFilePath = "${directory}/audio_record${counter++}.ogg"
 
             mediaRecorder?.setAudioSource(MediaRecorder.AudioSource.MIC)
             mediaRecorder?.setOutputFormat(MediaRecorder.OutputFormat.OGG)

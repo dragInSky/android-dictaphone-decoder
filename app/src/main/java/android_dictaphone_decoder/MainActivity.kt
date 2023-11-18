@@ -17,7 +17,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
@@ -43,9 +42,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import android_dictaphone_decoder.SpeechKit
 import android_dictaphone_decoder.theme.AppColors
 import android_dictaphone_decoder.theme.SpeechToTextTheme
+import androidx.compose.material.icons.filled.Add
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +53,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileWriter
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -246,13 +246,24 @@ class MainActivity : ComponentActivity() {
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    @SuppressLint("NewApi")
+    @SuppressLint("NewApi", "SimpleDateFormat")
     @Composable
     fun RecordButton() {
         val context = LocalContext.current
+
+        dictaphone.checkPermission(context) // проверка разрешений
+
         var isRecording by remember { mutableStateOf(false) }
 
         var elapsedTime by remember { mutableLongStateOf(0L) }
+
+        val selectedDate: String? = if (intent.getStringExtra("selected_date") != null){
+            intent.getStringExtra("selected_date")
+        } else{
+            val dateFormat = SimpleDateFormat("dd-MM-yyyy")
+            val currentDate = dateFormat.format(Date(System.currentTimeMillis()))
+            currentDate
+        }
 
         DisplayAudioData(context)
 
@@ -272,7 +283,7 @@ class MainActivity : ComponentActivity() {
                                 elapsedTime += 1
                             }
                         }
-                        dictaphone.startRecording(context)
+                        dictaphone.startRecording(context, selectedDate!!)
                     } else {
                         isRecording = false
                         dictaphone.stopRecording()
@@ -324,12 +335,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+
+    /*
+    Мб пригодится в дальнейшем
+     */
     private fun saveTextToFile(text: String, fileName: String) {
         try {
             val file = File(getExternalFilesDir(null), fileName)
             val writer = FileWriter(file)
             writer.append(text)
-            writer.flush()
+           writer.flush()
             writer.close()
             Toast.makeText(this, "Text saved to $fileName", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {

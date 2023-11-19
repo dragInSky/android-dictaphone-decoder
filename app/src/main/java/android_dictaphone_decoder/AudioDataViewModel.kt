@@ -1,18 +1,68 @@
 package android_dictaphone_decoder
 
+import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import java.time.LocalDateTime
+import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken
+import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 
-class AudioDataViewModel : ViewModel() {
-    private val _audioDataList = MutableStateFlow(listOf<AudioData>())
-    val audioDataList = _audioDataList.asStateFlow()
+/*
+*
+* Тут лежат методы для сериализации и для десериализации
+*
+* */
+class AudioDataViewModel(private val context: Context) : ViewModel() {
+    private val _audioDataList = mutableListOf<AudioData>()
+    val audioDataList: List<AudioData> = _audioDataList
 
-    fun addAudioData(filePath: String, date: LocalDateTime) {
-        val newAudioFileInfo = AudioData.instance(filePath, date)
-        val newList = _audioDataList.value.toMutableList()
-        newList.add(newAudioFileInfo)
-        _audioDataList.value = newList
+    private val gson = Gson()
+//    private var isDataLoaded = false
+//
+//    private suspend fun loadAudioDataIfNeeded(selectedDate: String?) {
+//        if (!isDataLoaded) {
+//            loadAudioData(selectedDate)
+//            isDataLoaded = true
+//        }
+//    }
+
+    suspend fun loadAudioData(selectedDate: String?) {
+        withContext(Dispatchers.IO) {
+            try {
+
+                val file = File(context.getExternalFilesDir(null), "$selectedDate/audio_data.json")
+
+                if (file.exists()) {
+                    val jsonString = file.readText()
+                    val type: java.lang.reflect.Type? = object : TypeToken<List<AudioData>>() {}.type
+                    _audioDataList.addAll(gson.fromJson(jsonString, type))
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private suspend fun saveAudioData(selectedDate: String?) {
+        withContext(Dispatchers.IO) {
+            try {
+                val file = File(context.getExternalFilesDir(null), "${selectedDate}/audio_data.json")
+                val jsonString = gson.toJson(_audioDataList)
+                file.writeText(jsonString)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun addAudioData(filePath: String, date: String?, selectedDate: String?) {
+        loadAudioData(selectedDate)
+        val newAudioFileInfo = AudioData.instance(filePath, date, selectedDate)
+        _audioDataList.add(newAudioFileInfo)
+        saveAudioData(selectedDate)
     }
 }

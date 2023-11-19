@@ -36,7 +36,6 @@ class CalendarActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             SpeechToTextTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -49,6 +48,7 @@ class CalendarActivity : ComponentActivity() {
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun Calendar(activity: ComponentActivity) {
@@ -70,7 +70,6 @@ fun Calendar(activity: ComponentActivity) {
                 AndroidView(factory = { CalendarView(it) }, update = {
                     it.setOnDateChangeListener {calendarView, year, month, day ->
                         date = "$day - ${month + 1} - $year"
-                        // Start a new activity when a date is selected
                         try {
                             val intent = Intent(activity, MainActivity::class.java)
                             intent.putExtra("selected_date", date)
@@ -78,7 +77,7 @@ fun Calendar(activity: ComponentActivity) {
                         } catch (e: Exception) {
                             e.printStackTrace()
                             println(e)
-                    }
+                        }
                     }
                 })
             }

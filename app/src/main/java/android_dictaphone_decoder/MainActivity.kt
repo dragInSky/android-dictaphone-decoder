@@ -23,7 +23,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -45,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import android_dictaphone_decoder.theme.AppColors
 import android_dictaphone_decoder.theme.SpeechToTextTheme
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -66,7 +66,7 @@ import java.util.*
 class MainActivity : ComponentActivity() {
     private val dictaphone = Dictaphone(this)
     private val speechKit = SpeechKit()
-    private var viewModel = AudioDataViewModel()
+    private var viewModel = AudioDataViewModel(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,8 +95,7 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("NewApi", "MutableCollectionMutableState")
     @Composable
     fun DisplayAudioData(context: Context) {
-        val audioDataList by viewModel.audioDataList.collectAsState()
-
+        val audioDataList by remember { mutableStateOf(viewModel.audioDataList) }
         val textStates = remember { mutableStateMapOf<Int, String>() }
         val playButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
         val textButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
@@ -159,9 +158,7 @@ class MainActivity : ComponentActivity() {
 
                             Spacer(Modifier.width(8.dp))
 
-                            val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
-                            val formattedDateTime = info.date.format(formatter)
-                            Text(formattedDateTime)
+                            Text(info.date)
                         }
                         Row {
                             val checkExpr =
@@ -246,11 +243,12 @@ class MainActivity : ComponentActivity() {
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    @SuppressLint("NewApi", "SimpleDateFormat")
+    @SuppressLint("NewApi", "SimpleDateFormat", "CoroutineCreationDuringComposition")
     @Composable
     fun RecordButton() {
         val context = LocalContext.current
-
+        val coroutineScope = rememberCoroutineScope()
+        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
         dictaphone.checkPermission(context) // проверка разрешений
 
         var isRecording by remember { mutableStateOf(false) }
@@ -264,6 +262,7 @@ class MainActivity : ComponentActivity() {
             val currentDate = dateFormat.format(Date(System.currentTimeMillis()))
             currentDate
         }
+
 
         DisplayAudioData(context)
 
@@ -288,10 +287,13 @@ class MainActivity : ComponentActivity() {
                         isRecording = false
                         dictaphone.stopRecording()
 
-                        viewModel.addAudioData(
-                            dictaphone.outputFilePath,
-                            LocalDateTime.now()
-                        )
+                        coroutineScope.launch {
+                            viewModel.addAudioData(
+                                dictaphone.outputFilePath,
+                                LocalDateTime.now().format(formatter),
+                                selectedDate
+                            )
+                        }
 
                         elapsedTime = 0
                     }

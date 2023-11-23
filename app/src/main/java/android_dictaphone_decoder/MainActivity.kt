@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import android_dictaphone_decoder.theme.AppColors
 import android_dictaphone_decoder.theme.SpeechToTextTheme
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -66,10 +65,19 @@ import java.util.*
 class MainActivity : ComponentActivity() {
     private val dictaphone = Dictaphone(this)
     private val speechKit = SpeechKit()
-    private var viewModel = AudioDataViewModel(this)
+    private lateinit var viewModel: AudioDataViewModel // Сделали позднюю инициализацию
 
+    @SuppressLint("SimpleDateFormat")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val selectedDate: String? = intent.getStringExtra("selected_date") ?: run {
+            val dateFormat = SimpleDateFormat("dd-MM-yyyy")
+            dateFormat.format(Date(System.currentTimeMillis()))
+        }
+
+        viewModel = AudioDataViewModel(this)
+        viewModel.loadAudioData(selectedDate) // загружаю записи если они есть
         setContent {
             SpeechToTextTheme {
                 Box(
@@ -85,17 +93,17 @@ class MainActivity : ComponentActivity() {
                             )
                         )
                 ) {
-                    RecordButton()
+                    RecordButton(viewModel)
                 }
             }
         }
     }
 
     @OptIn(ExperimentalComposeUiApi::class)
-    @SuppressLint("NewApi", "MutableCollectionMutableState")
+    @SuppressLint("NewApi", "MutableCollectionMutableState", "SimpleDateFormat")
     @Composable
-    fun DisplayAudioData(context: Context) {
-        val audioDataList by remember { mutableStateOf(viewModel.audioDataList) }
+    fun DisplayAudioData(context: Context, viewModel: AudioDataViewModel) {
+
         val textStates = remember { mutableStateMapOf<Int, String>() }
         val playButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
         val textButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
@@ -103,11 +111,12 @@ class MainActivity : ComponentActivity() {
         val textFieldValues = remember { mutableStateOf(mutableMapOf<Int, TextFieldValue>()) }
         val focusManager = LocalFocusManager.current
         val keyboardController = LocalSoftwareKeyboardController.current
-
         val ioScope = CoroutineScope(Dispatchers.IO)
 
+
+
         LazyColumn {
-            itemsIndexed(audioDataList) { index, info ->
+            itemsIndexed(viewModel.audioDataList) { index, info ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -245,9 +254,8 @@ class MainActivity : ComponentActivity() {
     @OptIn(DelicateCoroutinesApi::class)
     @SuppressLint("NewApi", "SimpleDateFormat", "CoroutineCreationDuringComposition")
     @Composable
-    fun RecordButton() {
+    fun RecordButton(viewModel: AudioDataViewModel) {
         val context = LocalContext.current
-        val coroutineScope = rememberCoroutineScope()
         val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
         dictaphone.checkPermission(context) // проверка разрешений
 
@@ -263,8 +271,7 @@ class MainActivity : ComponentActivity() {
             currentDate
         }
 
-
-        DisplayAudioData(context)
+        DisplayAudioData(context, viewModel)
 
         Box(
             modifier = Modifier
@@ -287,13 +294,10 @@ class MainActivity : ComponentActivity() {
                         isRecording = false
                         dictaphone.stopRecording()
 
-                        coroutineScope.launch {
-                            viewModel.addAudioData(
-                                dictaphone.outputFilePath,
-                                LocalDateTime.now().format(formatter),
-                                selectedDate
-                            )
-                        }
+                        this@MainActivity.viewModel.addAudioData(
+                            dictaphone.outputFilePath,
+                            LocalDateTime.now().format(formatter),
+                            selectedDate)
 
                         elapsedTime = 0
                     }

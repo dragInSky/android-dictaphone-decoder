@@ -177,18 +177,6 @@ class MainActivity : ComponentActivity() {
                             )
                         )
                         Row {
-                            Column {
-                                val tmpDuration =
-                                    String.format("%.2f", info.duration / 1000f).replace('.', ':')
-                                val tmpSize =
-                                    String.format("%.2f", info.size / 1024f).replace('.', ',')
-                                Text(
-                                    if (tmpDuration.length == 4) "0$tmpDuration,\t$tmpSize kb" else "$tmpDuration,\t$tmpSize kb"
-                                )
-
-                                Text(tmpTime)
-                            }
-
                             val checkExpr =
                                 info.duration / 1000f < 30 && info.size / 1024f / 1024f < 1
 
@@ -208,7 +196,7 @@ class MainActivity : ComponentActivity() {
                                                     textButtonStates[index]?.not() ?: true
                                             }
                                         } else {
-                                            textStates[index] = "Too long to recognize"
+                                            textStates[index] = "too long to recognize"
                                             textButtonStates[index] =
                                                 textButtonStates[index]?.not() ?: true
                                         }
@@ -224,13 +212,24 @@ class MainActivity : ComponentActivity() {
                                     contentColor = Color.White
                                 )
                             ) {
-                                Text(if (textButtonStates[index] == true) "Hide" else "Text")
+                                Text(if (textButtonStates[index] == true) "hide" else "text")
                             }
 
-                            Text(
-                                if (textButtonStates[index] == true) "${textStates[index]}" else "",
-                            )
+                            Column {
+                                val tmpDuration = String.format("%.2f", info.duration / 1000f)
+                                    .replace(',', ':')
+                                    .replace('.', ':')
+                                val tmpSize = String.format("%.2f", info.size / 1024f)
+                                Text(
+                                    if (tmpDuration.length == 4) "0$tmpDuration sec — $tmpSize kb" else "$tmpDuration sec — $tmpSize kb"
+                                )
+
+                                Text("recorded at: $tmpTime")
+                            }
                         }
+                        Text(
+                            if (textButtonStates[index] == true) "${textStates[index]}" else "",
+                        )
                     }
 
                     var autoStop: Job? = null
@@ -353,7 +352,7 @@ class MainActivity : ComponentActivity() {
                     Text(
                         text = "${elapsedTime / 10f}",
                         color = AppColors.Lightest,
-                        style = MaterialTheme.typography.h2.copy(
+                        style = MaterialTheme.typography.h3.copy(
                             fontWeight = FontWeight.Bold
                         ),
                         modifier = Modifier.align(Alignment.Center)

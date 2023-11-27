@@ -44,10 +44,12 @@ import androidx.compose.ui.unit.dp
 import android_dictaphone_decoder.theme.AppColors
 import android_dictaphone_decoder.theme.SpeechToTextTheme
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.ui.zIndex
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -86,24 +88,36 @@ class MainActivity : ComponentActivity() {
                         .background(
                             brush = Brush.linearGradient(
                                 colors = listOf(
-                                    AppColors.gradientBotton,
+                                    AppColors.gradientBottom,
                                     AppColors.gradientMid,
                                     AppColors.gradientTop
                                 )
                             )
                         )
                 ) {
-                    RecordButton(viewModel)
+                    BottomAppBar(
+                        backgroundColor = AppColors.Black,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .zIndex(10f)
+                    ) {
+                        Text(
+                            text = selectedDate.toString(),
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+                    RecordButton()
                 }
             }
         }
     }
 
     @OptIn(ExperimentalComposeUiApi::class)
-    @SuppressLint("NewApi", "MutableCollectionMutableState", "SimpleDateFormat")
+    @SuppressLint("NewApi", "MutableCollectionMutableState")
     @Composable
-    fun DisplayAudioData(context: Context, viewModel: AudioDataViewModel) {
-
+    fun DisplayAudioData(context: Context) {
         val textStates = remember { mutableStateMapOf<Int, String>() }
         val playButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
         val textButtonStates = remember { mutableStateMapOf<Int, Boolean>() }
@@ -113,21 +127,17 @@ class MainActivity : ComponentActivity() {
         val keyboardController = LocalSoftwareKeyboardController.current
         val ioScope = CoroutineScope(Dispatchers.IO)
 
-
-
         LazyColumn {
             itemsIndexed(viewModel.audioDataList) { index, info ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .border(2.dp, AppColors.Black)
-                        .background(AppColors.Ghost)
+                    modifier = Modifier.background(AppColors.Ghost)
                 ) {
                     Column(
                         modifier = Modifier
                             .weight(1f)
+                            .padding(horizontal = 16.dp)
                             .fillMaxSize()
-                            .padding(16.dp)
                     ) {
                         var value by remember {
                             mutableStateOf(
@@ -135,6 +145,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+                        val tmpTime = info.date.dropLast(3).dropWhile { it != ' ' }.trim()
                         TextField(
                             value = value,
                             onValueChange = { newValue ->
@@ -143,11 +154,18 @@ class MainActivity : ComponentActivity() {
                             },
                             placeholder = {
                                 Text(
-                                    "Record ${
-                                        if (info.filePath.length >= 5) info.filePath[info.filePath.length - 5] else 0
-                                    }"
+                                    text = "record $tmpTime",
+                                    fontWeight = FontWeight.Bold
                                 )
                             },
+                            colors = TextFieldDefaults.textFieldColors(
+                                backgroundColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            textStyle = LocalTextStyle.current.copy(
+                                fontWeight = FontWeight.Bold
+                            ),
                             keyboardOptions = KeyboardOptions.Default.copy(
                                 imeAction = ImeAction.Done
                             ),
@@ -159,17 +177,18 @@ class MainActivity : ComponentActivity() {
                             )
                         )
                         Row {
-                            Text("${String.format("%.2f", info.duration / 1000f)}s")
+                            Column {
+                                val tmpDuration =
+                                    String.format("%.2f", info.duration / 1000f).replace('.', ':')
+                                val tmpSize =
+                                    String.format("%.2f", info.size / 1024f).replace('.', ',')
+                                Text(
+                                    if (tmpDuration.length == 4) "0$tmpDuration,\t$tmpSize kb" else "$tmpDuration,\t$tmpSize kb"
+                                )
 
-                            Spacer(Modifier.width(8.dp))
+                                Text(tmpTime)
+                            }
 
-                            Text("${String.format("%.2f", info.size / 1024f)}kb")
-
-                            Spacer(Modifier.width(8.dp))
-
-                            Text(info.date)
-                        }
-                        Row {
                             val checkExpr =
                                 info.duration / 1000f < 30 && info.size / 1024f / 1024f < 1
 
@@ -198,7 +217,8 @@ class MainActivity : ComponentActivity() {
                                             textButtonStates[index]?.not() ?: true
                                     }
                                 },
-                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = AppColors.Darkest,
                                     contentColor = Color.White
@@ -207,28 +227,28 @@ class MainActivity : ComponentActivity() {
                                 Text(if (textButtonStates[index] == true) "Hide" else "Text")
                             }
 
-                            Spacer(Modifier.width(8.dp))
-
                             Text(
                                 if (textButtonStates[index] == true) "${textStates[index]}" else "",
-                                modifier = Modifier.align(Alignment.CenterVertically)
                             )
                         }
                     }
 
+                    var autoStop: Job? = null
                     Button(
                         onClick = {
                             if (playButtonStates[index] == true) {
                                 dictaphone.stopPlaying()
+                                autoStop?.cancel()
                             } else {
                                 dictaphone.startPlaying(info.filePath)
 
-//                                GlobalScope.launch {
-//                                    delay(info.duration)
-//
-//                                    dictaphone.stopPlaying()
-//                                    playButtonStates[index] = false
-//                                }
+                                autoStop = GlobalScope.launch {
+                                    delay(info.duration)
+                                    if (playButtonStates[index] == true) {
+                                        playButtonStates[index] = false
+                                        dictaphone.stopPlaying()
+                                    }
+                                }
                             }
                             playButtonStates[index] = playButtonStates[index]?.not() ?: true
                         },
@@ -252,9 +272,9 @@ class MainActivity : ComponentActivity() {
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    @SuppressLint("NewApi", "SimpleDateFormat", "CoroutineCreationDuringComposition")
+    @SuppressLint("NewApi", "SimpleDateFormat")
     @Composable
-    fun RecordButton(viewModel: AudioDataViewModel) {
+    fun RecordButton() {
         val context = LocalContext.current
         val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
         dictaphone.checkPermission(context) // проверка разрешений
@@ -263,20 +283,21 @@ class MainActivity : ComponentActivity() {
 
         var elapsedTime by remember { mutableLongStateOf(0L) }
 
-        val selectedDate: String? = if (intent.getStringExtra("selected_date") != null){
+        val selectedDate: String? = if (intent.getStringExtra("selected_date") != null) {
             intent.getStringExtra("selected_date")
-        } else{
+        } else {
             val dateFormat = SimpleDateFormat("dd-MM-yyyy")
             val currentDate = dateFormat.format(Date(System.currentTimeMillis()))
             currentDate
         }
 
-        DisplayAudioData(context, viewModel)
+        DisplayAudioData(context)
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(8.dp)
+                .zIndex(20f),
             contentAlignment = Alignment.BottomEnd
         ) {
             Button(
@@ -297,7 +318,8 @@ class MainActivity : ComponentActivity() {
                         this@MainActivity.viewModel.addAudioData(
                             dictaphone.outputFilePath,
                             LocalDateTime.now().format(formatter),
-                            selectedDate)
+                            selectedDate
+                        )
 
                         elapsedTime = 0
                     }
@@ -306,7 +328,7 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier
                     .size(75.dp, 75.dp)
                     .border(
-                        2.dp, AppColors.Lightest,
+                        1.dp, AppColors.Lightest,
                         shape = RoundedCornerShape(20.dp)
                     ),
                 colors = ButtonDefaults.buttonColors(
@@ -341,7 +363,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
     /*
     Мб пригодится в дальнейшем
      */
@@ -350,7 +371,7 @@ class MainActivity : ComponentActivity() {
             val file = File(getExternalFilesDir(null), fileName)
             val writer = FileWriter(file)
             writer.append(text)
-           writer.flush()
+            writer.flush()
             writer.close()
             Toast.makeText(this, "Text saved to $fileName", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {

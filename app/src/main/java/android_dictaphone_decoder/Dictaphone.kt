@@ -77,7 +77,7 @@ class Dictaphone(private val activity: ComponentActivity) {
     fun stopRecording() {
         //задержка чтобы запись резко не обрывалась
         runBlocking {
-            delay(100)
+            delay(200)
         }
 
         try {
